@@ -1,3 +1,5 @@
+import random
+
 # Boite S du Systeme PRESENT 
 
 # N    0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
@@ -5,9 +7,9 @@
 
 # l'index des nombre est egale a N
 
-debug = True
-debug1 = False
-debug2 = False
+debug = False
+debug1 = True
+debug2 = True
 debug3 = True
 
 sbox = [12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2]
@@ -55,34 +57,24 @@ if debug1:
 
 
 def enc_byte(key, byte):
-    t1 = byte & 15
-    t2 = byte >> 4
-    temp = [t1, t2]
+    temp = [byte & 15, byte >> 4]
     res = 0
     for i in range(len(key)):
-        t = round(key[0], int(temp[i]))
-        temp[i] = round(key[1], int(t))
-    temp[0] = temp[0] << 4
-    if debug: print(f'temp0 = {temp[0]}{type(temp[0])} temp1 = {temp[1]}{type(temp[1])}')
-    res = temp[0] + temp[1]
-    if debug: print(f"Encryptage d'un byte : {bin(byte)[2:].zfill(8)} -> {byte} -> {res}")
+        temp[i] = round(key[i], temp[i])
+    res = temp[0] + (temp[1] << 4)
+    if debug:
+        print(f"Chiffrement d'un octet : {bin(byte)[2:].zfill(8)} -> {byte} -> {res}")
     return res
-
 
 def dec_byte(key, byte):
-    t1 = byte & 15
-    t2 = byte >> 4
-    temp = [t1, t2]
-    res = 0 
+    temp = [byte & 15, byte >> 4]
+    res = 0
     for i in range(len(key)):
-        t = round_back(key[1], int(temp[i]))
-        temp[i] = round_back(key[0], int(t))
-    temp[0] = temp[0] << 4
-    if debug: print(f'temp0 = {temp[0]}{type(temp[0])} temp1 = {temp[1]}{type(temp[1])}')
-    res = temp[0] + temp[1]
-    if debug: print(f"Décryptage d'un byte : {bin(byte)[2:].zfill(8)} -> {byte} -> {res}")
+        temp[i] = round_back(key[i], temp[i])
+    res = temp[0] + (temp[1] << 4)
+    if debug:
+        print(f"Déchiffrement d'un octet : {bin(byte)[2:].zfill(8)} -> {byte} -> {res}")
     return res
-
 
 
 
@@ -121,16 +113,73 @@ def dec_file(key, filename):
         
 if debug2: 
     byte = ord('Z')
-    print(byte)
     enc_byte(key, byte)
     dec_byte(key,(enc_byte(key, byte)))
     
-    # enc_file(key, 'note.txt')
-    # dec_file(key, 'note.txt')
-
-
+    enc_file(key, 'note.txt')
+    dec_file(key, 'note.txt')
 
 # Exo 3
+
+# Fonction pour générer un IV aléatoire de 1 octet
+def generate_random_iv():
+    return random.randint(0, 255)
+
+def enc_file_CBC(key, filename):
+    f0 = open('./' + filename, "rb")
+    iv = generate_random_iv()  # Générer un IV aléatoire
+    valeur_CBC = iv
+    if debug: print(f"Valeur d'initialisation : {valeur_CBC}")
+    num = f0.read()
+    liste = list(num)
+    
+    f1 = open('./' + filename + '.enc', "wb")
+    
+    # Écrire l'IV dans le fichier chiffré
+    f1.write(iv.to_bytes(1, byteorder='big'))
+    
+    for i in range(len(liste)):
+        valeur_CBC = (valeur_CBC ^ liste[i])
+        if debug : print(f"Valeur d'initialisation : {valeur_CBC}")
+        liste[i] = enc_byte(key, valeur_CBC)
+    f1.write(bytearray(liste))
+
+    if debug:
+        print(liste)
+        print(len(liste))
+
+    f0.close()
+    f1.close()
+
+def dec_file_CBC(key, filename):
+    f0 = open('./' + filename + '.enc', "rb")
+    
+    # Lire l'IV depuis le fichier chiffré
+    iv = int.from_bytes(f0.read(1), byteorder='big')
+    valeur_CBC = iv
+    if debug: print(f"Valeur d'initialisation : {valeur_CBC}")
+    num = f0.read()
+    liste = list(num)
+
+    f1 = open(filename + '.dec', "wb")
+    
+    for i in range(len(liste)):
+        liste[i] = dec_byte(key, liste[i])
+        temp = liste[i] 
+        liste[i] = (valeur_CBC ^ liste[i]) % 256
+        valeur_CBC = temp 
+        if debug: print(f"Valeur d'initialisation : {valeur_CBC}\t liste[i] : {liste[i]}")
+    
+    f1.write(bytearray(liste))
+    
+    f0.close()
+    f1.close()
+    
+    if debug:
+        print(liste)
+        print(len(liste))
+
+
 
 if debug3: 
     key = (9,0)
@@ -141,72 +190,18 @@ if debug3:
     enc_file(key, "texte.txt")
     dec_file(key, "texte.txt")
 
-'''
-Je remarque qu'il y a une répétition du motif : &ö•&ö•ò&ö•&ö•³ 
+    '''
+    1. Je remarque qu'il y a une répétition du motif : &ö•&ö•ò&ö•&ö•³ 
 
-Je propose de l'attaquer avec une analyse de fréquence 
-'''
-
-def enc_file_CBC(key, filename):
-    f0 = open('./' + filename, "rb")
-    valeur_CBC = 598367 # utiliser une clé aléatoire plus tard
-    if debug : print(f"La valeur d'initialisation : {valeur_CBC}")
-    num = f0.read()
-    liste = list(num)
+    2. Je propose de l'attaquer avec une analyse de fréquence 
+    '''
     
-    f1 = open('./' + filename + '.enc', "wb")
-    
-    for i in range(len(liste)):
-        valeur_CBC = (valeur_CBC ^ liste[i]) % 255
-        print(f"valeur CBC = {valeur_CBC}")
-        liste[i] = enc_byte(key, valeur_CBC)
-    f1.write(bytearray(liste))
-        
-    f0.close()
-    f1.close
-    
-
-def dec_file_CBC(key, filename):
-    f0 = open('./' + filename + '.enc', "rb")
-    valeur_CBC = 0
-    num = f0.read()
-    liste = list(num)
-
-    f1 = open(filename+'.dec', "wb")
-    
-    for i in range(len(liste)):
-        liste[i] = dec_byte(key, liste[i])
-        # valeur_CBC = 
-        # liste[i] ^ 
-    f1.write(bytearray(liste))
-    
-    f0.close()
-    f1.close()
-    
-    if debug:
-        print(liste)
-        print(len(liste))
-        
-if debug3: 
-    key = (9,0)
     f = open("texte_CBC.txt", "wb")
     f.write(bytearray("coucou?coucou!".encode("utf-8")))
     f.close()
 
     enc_file_CBC(key, "texte_CBC.txt")
-    '''
-    c'est déjà mieux : &ö•&ö•ò&ö•&ö•³ -> fAÅû‘‚Ib-ý‚«
-    valeur_CBC = 598367 # utiliser une clé aléatoire plus tard 
-    '''
     dec_file_CBC(key, "texte_CBC.txt")
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
+    '''
+    4. l'avantage du vecteur d'initialisation est de mieux masquer notre passage dans un flux d'information et d'etre moins repérable par l'humain
+    '''
