@@ -1,0 +1,5 @@
+m = 42c0ffee93
+N = 02c99a781f
+s = 02306bf1b7
+
+2. l'alghorithm nous donne l'expensission modulaire 

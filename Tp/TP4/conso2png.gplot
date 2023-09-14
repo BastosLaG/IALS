@@ -1,0 +1,11 @@
+set datafile separator "\t"
+
+set terminal "png" size 1500,600
+
+set yrange [150:250] # adapter si besoin
+
+set xrange [0:650000] # adapter si besoin
+
+set output "trace.png" # adapter si besoin
+
+plot "conso.txt" using 1 with linespoints, "" using 2 with lines # adapter si besoin
