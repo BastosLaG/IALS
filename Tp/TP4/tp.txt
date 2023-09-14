@@ -2,4 +2,8 @@ m = 42c0ffee93
 N = 02c99a781f
 s = 02306bf1b7
 
-2. l'alghorithm nous donne l'expensission modulaire 
+2. l'alghorithm nous donne l'exponentiation modulaire 
+
+4. Je vois qu'il y a un pique de consomation au début puis cela se stabilise pour la suite du programme avec des piques et des descentes éléctriques
+
+5. 
