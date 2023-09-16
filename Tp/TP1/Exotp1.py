@@ -98,7 +98,7 @@ def dec_file(key, filename):
     num = f0.read()
     liste = list(num)
 
-    f1 = open('./' + filename + '.dec', "wb")
+    f1 = open('dec' + filename , "wb")
     
     for i in range(len(liste)):
         liste[i] = dec_byte(key, liste[i])

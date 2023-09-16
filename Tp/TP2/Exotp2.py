@@ -54,13 +54,16 @@ msg = int.from_bytes("J'adore la programmation".encode('utf-8'), 'big')
 msg = msg.to_bytes((msg.bit_length() + 7) // 8, 'big').decode('utf-8')
 # print(msg)
 
+def sti(msg):
+    return int.from_bytes('all cats are beautiful'.encode('utf-8'), 'big')
+
 def rsa_enc(msg, key):
-    msg_enc = int.from_bytes(msg.encode('utf-8'),'big')
-    return rsa(msg_enc, key)
+    msg = int.from_bytes(msg.encode('utf-8'), 'big')
+    return rsa(msg, key)
 
 def rsa_dec(msg, key):
     msg_dec = rsa(msg, key)
-    return msg_dec.to_bytes((msg_dec.bit_length() + 7) // 8, 'big')
+    return msg_dec.to_bytes((msg_dec.bit_length() + 7) // 8, 'big').decode('utf-8')
 
 if test:   
     msgA1 = "Bonjour je suis Alice"
@@ -84,9 +87,9 @@ if test:
         print(f"Je suis le message decrypter : {msgB3}")
 
 # message de tomas crypté
-clefs =(49305946713190178331685101770887049321272784225708294443436764890372104868233, 65167699646164877331317371317401837940241174188022295084726202562535201830271)
-messagecrypté = 6895038287525557109396783288511458527508329148439023615942010303654796867140
-print(rsa_dec(messagecrypté, clefs))
+# clefs =(49305946713190178331685101770887049321272784225708294443436764890372104868233, 65167699646164877331317371317401837940241174188022295084726202562535201830271)
+# messagecrypté = 6895038287525557109396783288511458527508329148439023615942010303654796867140
+# print(rsa_dec(messagecrypté, clefs))
 
 '''
 Exo 3
@@ -102,10 +105,16 @@ messages de toutes tailles et de s’assurer au passage de l’intégrité du me
 
 
 def h(msg):
-    return hashlib.sha256(msg.encode('utf-8')).hexdigest()
+    msg = hashlib.sha256(msg.encode('utf-8')).hexdigest()
+    
+    if debug: print(f'h : {msg}')
+    return int(msg,16)
 
-def rsa_sign(msg, key_prv):
-    return msg + str(rsa_enc(h(msg), key_prv))
+def rsa_sign(msg, key):
+    '''La clé priver du signataire doit crypté le hashage'''
+    s = h(msg)
+    return rsa(s, key)
+
 
 if test:
     msg = "Je suis un hachis de code !"
@@ -113,8 +122,13 @@ if test:
     Ap, As = gen_rsa_keypair(bits)
     Bp, Bs = gen_rsa_keypair(bits)
 
-    print(f'message : {msg}')
-    print(f'message haché : {h(msg)}')
-    print(f'message encodé sans signature : {str(rsa_enc(msg, Bp))}')
-    print(f'message encodé avec signature : {rsa_enc(rsa_sign(msg, As), Bp)}')
-    print(f'message décodé avec signature : {rsa_dec(rsa_enc(rsa_sign(msg, As), Bp), Bs)}')
+    print(f'message : \n{msg}')
+    print(f'message haché : \n{h(msg)}')
+    print(f'message encodé sans signature : \n{rsa_enc(msg, Bp)}')
+    print(f'message encodé avec signature : \n{rsa_sign(msg, As)}')
+    ms = (rsa_sign(msg, As), rsa_enc(msg, Bp))
+    print(f'message décodé avec signature : \n{rsa_dec(ms[1],Bs)}')
+    mp = (rsa_sign(msg[0], Ap) ,(rsa_dec(ms[1],Bs)))
+    # print(f'Verification signature : {rsa_verify(mp)}')
+
+
