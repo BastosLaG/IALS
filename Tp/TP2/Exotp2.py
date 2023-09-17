@@ -2,7 +2,7 @@ import random
 from Crypto.Util import number
 import hashlib
 
-debug = True
+debug = False
 test = True
 
 def gen_rsa_keypair(bits):
@@ -33,10 +33,6 @@ def gen_rsa_keypair(bits):
     
     return public_key, private_key
 
-if test : 
-    bits = 2048  # Taille de la clé en bits
-    Ap, As = gen_rsa_keypair(bits)
-    Bp, Bs = gen_rsa_keypair(bits)
 
 # Exo 2
 
@@ -55,7 +51,10 @@ msg = msg.to_bytes((msg.bit_length() + 7) // 8, 'big').decode('utf-8')
 # print(msg)
 
 def sti(msg):
-    return int.from_bytes('all cats are beautiful'.encode('utf-8'), 'big')
+    return int.from_bytes(msg.encode('utf-8'), 'big')
+
+def its(msg):
+    return msg.to_bytes((msg.bit_length() + 7) // 8, 'big').decode('utf-8')
 
 def rsa_enc(msg, key):
     msg = int.from_bytes(msg.encode('utf-8'), 'big')
@@ -64,27 +63,6 @@ def rsa_enc(msg, key):
 def rsa_dec(msg, key):
     msg_dec = rsa(msg, key)
     return msg_dec.to_bytes((msg_dec.bit_length() + 7) // 8, 'big').decode('utf-8')
-
-if test:   
-    msgA1 = "Bonjour je suis Alice"
-    msgB1 = "Bonjour je suis Bob"
-    # Si Bob veut envoyer un message a Alice
-    msgB2 = rsa_enc(msgB1, Ap)
-    # Si Alice veut décripter un message a Bob
-    msgA2 = rsa_dec(msgB2, As)
-
-    if debug:
-        print(f"Je suis le message encrypter : {msgB2}")
-        print(f"Je suis le message decrypter : {msgA2}")
-
-    # Si Alice veut envoyer un message a Bob
-    msgA3 = rsa_enc(msgA1, Bp)
-    # Si Bob veut décripter un message a Alice
-    msgB3 = rsa_dec(msgA3, Bs)
-    
-    if debug:
-        print(f"Je suis le message encrypter : {msgA3}")
-        print(f"Je suis le message decrypter : {msgB3}")
 
 # message de tomas crypté
 # clefs =(49305946713190178331685101770887049321272784225708294443436764890372104868233, 65167699646164877331317371317401837940241174188022295084726202562535201830271)
@@ -106,29 +84,62 @@ messages de toutes tailles et de s’assurer au passage de l’intégrité du me
 
 def h(msg):
     msg = hashlib.sha256(msg.encode('utf-8')).hexdigest()
-    
     if debug: print(f'h : {msg}')
-    return int(msg,16)
+    return msg
 
-def rsa_sign(msg, key):
-    '''La clé priver du signataire doit crypté le hashage'''
-    s = h(msg)
-    return rsa(s, key)
+def rsa_sign(msg, key_pub, key_prv):
+    ''' La clé priver du signataire doit crypté le hashage 
+        La clé publique du destinataire doit encrypté le message'''
+    return [rsa_enc(msg, key_pub), rsa_enc(h(msg), key_prv)]
 
-
+def rsa_verif(msg, key_prv, key_pub):
+    ''' 
+    La clé priver du signataire doit crypté le hashage 
+    La clé publique du destinataire doit encrypté le message
+    '''
+    print(f'msg[0] = {msg[0]}\n{type(msg[0])}\nmsg[1] = {msg[1]}\n{type(msg[1])}')
+    msg_dec = rsa_dec(msg[0], key_prv)
+    sign_dec = rsa_dec(msg[1], key_pub)
+    if debug : print(msg_dec, sign_dec)
+    return h(msg_dec) == sign_dec
+    
+    
 if test:
-    msg = "Je suis un hachis de code !"
-
+    bits = 2048  # Taille de la clé en bits
     Ap, As = gen_rsa_keypair(bits)
     Bp, Bs = gen_rsa_keypair(bits)
 
-    print(f'message : \n{msg}')
-    print(f'message haché : \n{h(msg)}')
+    msgA1 = "Bonjour je suis Alice"
+    msgB1 = "Bonjour je suis Bob"
+    # Si Bob veut envoyer un message a Alice
+    msgB2 = rsa_enc(msgB1, Ap)
+    # Si Alice veut décripter un message a Bob
+    msgA2 = rsa_dec(msgB2, As)
+
+    if debug:
+        print(f"Je suis le message encrypter : {msgB2}")
+        print(f"Je suis le message decrypter : {msgA2}")
+
+    # Si Alice veut envoyer un message a Bob
+    msgA3 = rsa_enc(msgA1, Bp)
+    # Si Bob veut décripter un message a Alice
+    msgB3 = rsa_dec(msgA3, Bs)
+    
+    if debug:
+        print(f"Je suis le message encrypter : {msgA3}")
+        print(f"Je suis le message decrypter : {msgB3}")
+
+    msg = "Je suis un hachis de code !"
+
+    print(f'message : {msg}')
+    print(f'message haché : {h(msg)}')
     print(f'message encodé sans signature : \n{rsa_enc(msg, Bp)}')
-    print(f'message encodé avec signature : \n{rsa_sign(msg, As)}')
-    ms = (rsa_sign(msg, As), rsa_enc(msg, Bp))
-    print(f'message décodé avec signature : \n{rsa_dec(ms[1],Bs)}')
-    mp = (rsa_sign(msg[0], Ap) ,(rsa_dec(ms[1],Bs)))
-    # print(f'Verification signature : {rsa_verify(mp)}')
+    msg_enc = rsa_enc(msg, Bp)
+    print(f'message décodé sans signature : \n{rsa_dec(msg_enc, Bs)}')
+    msg_dec = rsa_dec(msg_enc, Bs)
+    print(f'message encodé avec signature : \n[{rsa_enc(msg, Bp)}, {sti(h(msg))}]')
+    print(f'message encodé avec signature encodé : \n{rsa_sign(msg, Bp, As)}')
+    msg_sign = rsa_sign(msg, Bp, As)
+    print(f'Verification signature : {rsa_verif(msg_sign, Bs, Ap)}')
 
 
