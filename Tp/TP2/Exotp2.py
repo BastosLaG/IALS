@@ -72,11 +72,13 @@ def rsa_dec(msg, key):
 '''
 Exo 3
 1. Soit (𝐴𝑝, 𝐴𝑠) la paire de clefs d’Alice, et (𝐵𝑝, 𝐵𝑠) la paire de clefs de Bob.
-(a) → Quelle clef doit utiliser Bob pour signer un message? Il doit utiliser ça propre clé secrete
-(b) → Quelle clef doit utiliser Alice pour vérifier l’authenticité du message qui prétend être signé par Bob? Elle doit utilisée la clé publique de Bob
+(a) → Quelle clef doit utiliser Bob pour signer un message? 
+Il doit utiliser ça propre clé secrete 
 
-2. Pour signer un message, on signe généralement un condensé (hash) du message, ce qui permet de signer des
-messages de toutes tailles et de s’assurer au passage de l’intégrité du message.
+(b) → Quelle clef doit utiliser Alice pour vérifier l’authenticité du message qui prétend être signé par Bob? 
+Elle doit utilisée la clé publique de Bob
+
+2. Pour signer un message, on signe généralement un condensé (hash) du message, ce qui permet de signer des messages de toutes tailles et de s’assurer au passage de l’intégrité du message.
 → Quelle est la procédure de signature et quelle est la forme du message signé? 
 𝑠 = 𝐻(𝑚)𝑑 mod 𝑛.
 '''
@@ -97,12 +99,29 @@ def rsa_verif(msg, key_prv, key_pub):
     La clé priver du signataire doit crypté le hashage 
     La clé publique du destinataire doit encrypté le message
     '''
-    print(f'msg[0] = {msg[0]}\n{type(msg[0])}\nmsg[1] = {msg[1]}\n{type(msg[1])}')
+    if debug: print(f'msg[0] = {msg[0]}\n{type(msg[0])}\nmsg[1] = {msg[1]}\n{type(msg[1])}')
     msg_dec = rsa_dec(msg[0], key_prv)
     sign_dec = rsa_dec(msg[1], key_pub)
     if debug : print(msg_dec, sign_dec)
     return h(msg_dec) == sign_dec
-    
+
+'''
+Exo 4 : 
+1.La version de RSA qu’on a implémentée ici, qu’on appelle communémenttextbook RSA, souffre de plusieursproblème de sécurité.Par exemple, il est possible deforgerdes chiffrés valides à partir de chiffrés existants qu’on aurait interceptés.C’est ce qu’on appelle la malléabilité.
+
+→Comment? 
+
+Cela se produit parce que la fonction de chiffrement RSA est basée sur une opération de puissance modulaire et cette opération est linéaire. Donc si un attaquant intercepte un texte chiffré C correspondant à un message chiffré avec la clé publique de quelqu'un, il peut effectuer certaines opérations mathématiques sur C pour obtenir un nouveau texte chiffré C' qui sera utile pour déchiffrer le message sans connaitre la clé privée.
+
+2.Un autre soucis est le déterminisme du chiffrement. C’est à dire que si on chiffre deux fois le même messageavec la même clef, on obtient deux fois le même chiffré.
+
+→En quoi est-ce un problème?
+
+c'est un problème car l'on peut facilement identifier des structure ou récupérer des informations qui se répetes d'un message a un autre c'est pour cela qu'au Tp 1 nous devions utiliser une structure avec une valeur initial pour éviter les répétitions.
+
+3.Conclusion : c’estcompliquéd’implémenter correctement des algorithmes cryptographiques. Il vaut mieux éviter de le faire soi-même et plutôt utiliser des bibliothèques déjà existantes, libre, et surtout, largementéprouvées.
+
+''' 
     
 if test:
     bits = 2048  # Taille de la clé en bits
@@ -116,30 +135,35 @@ if test:
     # Si Alice veut décripter un message a Bob
     msgA2 = rsa_dec(msgB2, As)
 
-    if debug:
-        print(f"Je suis le message encrypter : {msgB2}")
-        print(f"Je suis le message decrypter : {msgA2}")
+    
+    print(f"Je suis le message encrypter : {msgB2}")
+    print(f"Je suis le message decrypter : {msgA2}")
 
     # Si Alice veut envoyer un message a Bob
     msgA3 = rsa_enc(msgA1, Bp)
     # Si Bob veut décripter un message a Alice
     msgB3 = rsa_dec(msgA3, Bs)
     
-    if debug:
-        print(f"Je suis le message encrypter : {msgA3}")
-        print(f"Je suis le message decrypter : {msgB3}")
+    
+    print(f"Je suis le message encrypter : {msgA3}")
+    print(f"Je suis le message decrypter : {msgB3}")
 
     msg = "Je suis un hachis de code !"
 
+    msg_enc = rsa_enc(msg, Bp)
+    msg_dec = rsa_dec(msg_enc, Bs)
+    msg_sign = rsa_sign(msg, Bp, As)
+    
     print(f'message : {msg}')
     print(f'message haché : {h(msg)}')
     print(f'message encodé sans signature : \n{rsa_enc(msg, Bp)}')
-    msg_enc = rsa_enc(msg, Bp)
     print(f'message décodé sans signature : \n{rsa_dec(msg_enc, Bs)}')
-    msg_dec = rsa_dec(msg_enc, Bs)
     print(f'message encodé avec signature : \n[{rsa_enc(msg, Bp)}, {sti(h(msg))}]')
     print(f'message encodé avec signature encodé : \n{rsa_sign(msg, Bp, As)}')
-    msg_sign = rsa_sign(msg, Bp, As)
     print(f'Verification signature : {rsa_verif(msg_sign, Bs, Ap)}')
+    
+    
+    
+    
 
 
