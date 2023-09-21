@@ -40,7 +40,7 @@ _modexp_loop:
 
   and r9 #1 !r7,#-1
   beq _modexp_loop_sqr r9 #0
-  dbg 200
+  
 _modexp_loop_mul:
   mov r20 r8
   mov r21 r5
