@@ -86,6 +86,60 @@ def gen_m_cc(key, n):
 '''
 Exercice 3: 
 
+1. →Pourquoi?
 
+Notre fonction n'est pas linéaire a cause de la boite S qui brouille les entrés et les sorties.
+
+2. →Écrivez une fonction qui calcule pour chaque couple(𝑚𝑎𝑠𝑘𝑖, 𝑚𝑎𝑠𝑘𝑜), pour combien des 16 paires entrée/-sortie de la boîte S on a une égalité de parité.
+'''
+debug = True
+
+def cps(sbox):
+    # eviter les cases vides et les out of range
+    score_table = [[0 for _ in range(16)] for _ in range(16)]
+    if debug: 
+        for elem in score_table:
+            print(elem)
+    for mask_i in range(1, 16):
+        for mask_o in range(1, 16):
+            count = 0
+            for i in range(16):
+                input_masked = i & mask_i
+                output_masked = sbox[i] & mask_o
+                if bin(input_masked).count('1') % 2 == bin(output_masked).count('1') % 2 and bin(input_masked).count('1') % 2 == 1:
+                    count += 1
+            score_table[mask_i][mask_o] = count
+    if debug: 
+        print()
+        for elem in score_table:
+            print(f'{elem}')
+    return score_table
+
+
+
+def fbm(score_table):
+    best_s = 0
+    best_m = None
+
+    for mask_i in range(1, 16):
+        for mask_o in range(1, 16):
+            score = score_table[mask_i][mask_o]
+            if score > best_s:
+                best_s = score
+                best_m = (mask_i, mask_o)
+
+    return best_m, best_s
+
+score_table = cps(sbox)
+s, m = fbm(score_table)
+print(f"Score = : {s}\nmask = : {m}")
 
 '''
+la fonction me renvoie une paire mais d'autre paire sont égale a celle si c'est donc l'une des meillieures et pas la meillieure
+
+Exo 4: 
+
+'''
+
+liste_m_cc = gen_m_cc(key, 16)
+print(liste_m_cc)
