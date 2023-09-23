@@ -77,7 +77,7 @@ La réponse à la question est ce qu'on est sur de trouver la bonne clé est NON
 def gen_m_cc(key, n):
     res = []
     for i in range(n):
-        temp = random.randint(0, 15)
+        temp = i
         res.append([temp, enc(temp, key)])
     return res
 
@@ -94,52 +94,124 @@ Notre fonction n'est pas linéaire a cause de la boite S qui brouille les entré
 '''
 debug = True
 
-def cps(sbox):
-    # eviter les cases vides et les out of range
-    score_table = [[0 for _ in range(16)] for _ in range(16)]
-    if debug: 
-        for elem in score_table:
-            print(elem)
-    for mask_i in range(1, 16):
-        for mask_o in range(1, 16):
-            count = 0
-            for i in range(16):
-                input_masked = i & mask_i
-                output_masked = sbox[i] & mask_o
-                if bin(input_masked).count('1') % 2 == bin(output_masked).count('1') % 2 and bin(input_masked).count('1') % 2 == 1:
-                    count += 1
-            score_table[mask_i][mask_o] = count
-    if debug: 
-        print()
-        for elem in score_table:
-            print(f'{elem}')
-    return score_table
+# count parity score
+def cps(sbox, mask_i, mask_o):
+    count = 0
+    for input in range(16):
+        output = sbox[input]
+        if bin(input & mask_i).count('1') % 2 == bin(output & mask_o).count('1') % 2:
+            count += 1
+    return count
 
 
+# find best mask
+def fbm(sbox):
+    best_mask_i = 0
+    best_mask_o = 0
+    best_score = 0
 
-def fbm(score_table):
-    best_s = 0
-    best_m = None
+    for mask_i in range(1, 15):
+        for mask_o in range(1, 15):
+            score = cps(sbox, mask_i, mask_o)
+            if score > best_score:
+                best_score = score
+                best_mask_i = mask_i
+                best_mask_o = mask_o
+    return best_mask_i, best_mask_o
 
-    for mask_i in range(1, 16):
-        for mask_o in range(1, 16):
-            score = score_table[mask_i][mask_o]
-            if score > best_s:
-                best_s = score
-                best_m = (mask_i, mask_o)
-
-    return best_m, best_s
-
-score_table = cps(sbox)
-s, m = fbm(score_table)
-print(f"Score = : {s}\nmask = : {m}")
+i, o = fbm(sbox)
+print(f'best_mask_i = {i}, best_mask_o = {o}')
 
 '''
 la fonction me renvoie une paire mais d'autre paire sont égale a celle si c'est donc l'une des meillieures et pas la meillieure
 
 Exo 4: 
 
+1.
 '''
 
 liste_m_cc = gen_m_cc(key, 16)
 print(liste_m_cc)
+
+'''
+2. 
+'''
+
+def s_k0(m_cc, sbox, mask_i, mask_o):
+    score_k0 = []
+    list_k0 = []
+    for elem in m_cc:
+        msg_cl = elem[0]
+        msg_cr = elem[1]
+        count = 0
+        for k0 in range(0,15):
+            t = sbox[msg_cl ^ k0]
+            if bin(t & mask_i).count('1') % 2 == bin(msg_cr & mask_o).count('1') % 2:
+                count += 1
+        score_k0.append(count)
+    if debug: print(f'Score obtenu pour k0 : \t{score_k0}')
+    for k in score_k0:
+        if k == max(score_k0):
+            list_k0.append(score_k0.index(k))
+            score_k0[score_k0.index(k)] = 0
+    if debug: print(f'k0 possible : \t\t{list_k0}')
+    return list_k0
+
+s_k0(liste_m_cc, sbox, i, o)
+
+
+
+
+def count_parity_equalities(S_box, mask_in, mask_out):
+    count = 0
+    for input in range(16):
+        output = S_box[input]
+        if bin(input & mask_in).count('1') % 2 == bin(output & mask_out).count('1') % 2:
+            count += 1
+    return count
+
+
+def find_best_masks(S_box):
+    best_mask_in = 0
+    best_mask_out = 0
+    best_score = 0
+
+    for mask_in in range(1, 16):  # Start from 1 to exclude mask with all 0s
+        for mask_out in range(1, 16):
+            score = count_parity_equalities(S_box, mask_in, mask_out)
+            if score > best_score or (score == best_score and (bin(mask_in).count('1') + bin(mask_out).count('1') > bin(best_mask_in).count('1') + bin(best_mask_out).count('1'))):
+                best_score = score
+                best_mask_in = mask_in
+                best_mask_out = mask_out
+
+    return best_mask_in, best_mask_out
+
+
+def generate_known_pairs(k0, k1):
+    known_pairs = []
+    for m in range(16):
+        c = enc(m, key)
+        known_pairs.append((m, c))
+    return known_pairs
+
+# Exemple d'utilisation
+k0 = 0x5A3C
+k1 = 0x9B7E
+known_pairs = generate_known_pairs(k0, k1)
+print(known_pairs)
+
+
+def score_k0(S_box, k0_candidates, k1, known_pairs):
+    scores = {}
+    for k0 in k0_candidates:
+        score = 0
+        for m, c in known_pairs:
+            t = enc(m, key)
+            if count_parity_equalities(S_box, m, c) == count_parity_equalities(S_box, t, c):
+                score += 1
+        scores[k0] = score
+    return scores
+
+def select_k0_candidates(scores, threshold):
+    k0_candidates = [k0 for k0, score in scores.items() if score >= threshold]
+    return k0_candidates

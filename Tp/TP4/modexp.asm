@@ -34,6 +34,7 @@ modexp:
   cal bignum_init               ; tmp = 0
 
 _modexp_loop:
+  dbg 200
   mov r20 r7
   cal bignum_zero
   beq _modexp_end !r7 #0
