@@ -149,20 +149,23 @@ def approximation_k0(liste_m, sbox):
     count = 0
     best_k0 = 0
     liste_best_k0 = list()
+    # test pariter pour chaque k0 
     for k0 in range(0,15):
         for msg in liste_m:
-            mask_in = m[0] & sbox[k0^msg[0]]
-            mask_out = m[1] & sbox[k0^msg[1]]
+            mask_in = m[0] & sbox[k0 ^ msg[0]]
+            mask_out = m[1] & sbox[k0] ^ msg[1]
             if bin(mask_in).count('1') % 2 == bin(mask_out).count('1') % 2 and bin(mask_in).count('1') % 2 == 1:
                 count += 1
         k0_poss[k0] = count
         # if debug: print('\n',k0_poss)
         count = 0
     k0_poss[k0] = abs(count - (len(msg) / 2)) 
+    # trouve le k0 qui a la meilleur pariter 
     for k in range(len(k0_poss)):
         if k0_poss[k] >= best_k0:
             best_k0 = k0_poss[k]
     if debug: print('\n', best_k0)
+    # ajoute le/les k0 a notre liste finale 
     for i in range(len(k0_poss)):
         if k0_poss[i] == best_k0:
             liste_best_k0.append(k0_poss.index(k0_poss[i], i))
@@ -171,33 +174,63 @@ def approximation_k0(liste_m, sbox):
     
     return liste_best_k0
 
-approximation_k0(liste_m_cc, sbox)
+k0 = approximation_k0(liste_m_cc, sbox)
 
 def approximation_k1(liste_m, sbox):
     k1_poss = [0 for _ in range(15)]
     score_table = cps(sbox)
     m = fbm(score_table)[0]
     count = 0
-    best_k0 = 0
-    liste_best_k0 = list()
-    for k0 in range(0,15):
+    best_k1 = 0
+    liste_best_k1 = list()
+    
+    for k1 in range(15):
         for msg in liste_m:
-            mask_in = m[0] & sbox[k0^msg[0]]
-            mask_out = m[1] & sbox[k0^msg[1]]
+            mask_in = m[0] & sbox[k1 ^ msg[0]]
+            mask_out = m[1]
             if bin(mask_in).count('1') % 2 == bin(mask_out).count('1') % 2 and bin(mask_in).count('1') % 2 == 1:
                 count += 1
-        k1_poss[k0] = count
-        # if debug: print('\n',k1_poss)
+        k1_poss[k1] = count
         count = 0
-    k1_poss[k0] = abs(count - (len(msg) / 2)) 
-    for k in range(len(k1_poss)):
-        if k1_poss[k] >= best_k0:
-            best_k0 = k1_poss[k]
-    if debug: print('\n', best_k0)
-    for i in range(len(k1_poss)):
-        if k1_poss[i] == best_k0:
-            liste_best_k0.append(k1_poss.index(k1_poss[i], i))
-    if debug: print('\n',k1_poss)
-    if debug: print('\n',liste_best_k0)
     
-    return liste_best_k0
+    k1_poss[k1] = abs(count - (len(msg) / 2)) 
+    
+    for k in range(len(k1_poss)):
+        if k1_poss[k] >= best_k1:
+            best_k1 = k1_poss[k]
+    
+    if debug: print('\n', best_k1)
+    
+    for i in range(len(k1_poss)):
+        if k1_poss[i] == best_k1:
+            liste_best_k1.append(k1_poss.index(k1_poss[i], i))
+             
+    if debug: print('\n',k1_poss)
+    if debug: print('\n',liste_best_k1)
+    
+    return liste_best_k1
+
+k1 = approximation_k1(liste_m_cc, sbox)
+
+print(k0, k1)
+
+# def combinaison_cles(k0, k1):
+#     cles = [[0 for _ in range(len(k1))] for _ in range(len(k0))]  # Crée une liste de listes pour stocker les paires (k0, k1)
+
+#     for i in range(len(k0)):
+#         for j in range(len(k1)):
+#             cles[i][j] = [k0[i], k1[j]]
+#     if debug: print(cles)
+#     return cles
+
+# clé = combinaison_cles(k0, k1)
+
+
+for i in range(1000):
+    liste_m_cc = gen_m_cc(key, 16)
+    k0 = approximation_k0(liste_m_cc, sbox)
+    k1 = approximation_k1(liste_m_cc, sbox)
+    for o in range(len(k0)):
+        for j in range(len(k1)):
+            
+
