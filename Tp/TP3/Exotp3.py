@@ -42,15 +42,10 @@ On peut plus faire le calcul en rajoutant un tour parce que il nous manque la va
     b. Non car on ne pourras pas car plusieurs clé sont disponible selon les cas, même si on les a toutes cela reste introuvable
 4.
     a. 
-    (2**4)*2
-    (2bit puissance (taille clé)) fois nombre de tour
-    la clé est dans notre toycipher est compris entre 256 et 0 sous cette forme key = [0000, 0000]
-    notre message est compris entrte 16 et 0 car sur 4 bit
+    (2**8)*2 == 512
+    la clé est dans notre toycipher est compris entre 512 et 0 sous cette forme key = [0000, 0000]
+    se résultat est faux et on se rapproche plus des 2**13
 '''
-key = [11, 5]
-m = 15
-m1 = enc(m, key)
-# print(m1)
 
 # 5
 # Test de brute force
@@ -64,10 +59,14 @@ def brute_force(m, m1):
                 print(f"clé possible [{kt[0]},{kt[1]}]")
     return False
 
+# print("Exo 2 :")
+key = [11, 5]
+m = 15
+m1 = enc(m, key)
+# print(m1)
 # print(brute_force(m, m1))
-
 m1 = dec(m1, key)
-# print(f"La vraie clé est : {key}")
+print(f"La vraie clé est : {key}")
 
 '''
 La réponse à la question est ce qu'on est sur de trouver la bonne clé est NON car le brute force nous donne beaucoup trop de correspondance différentes a tester. Mais cela peut etre utiliser pour réduire notre champs d'action cepandant sur une clé beaucoup plus grande cela reste inutilisable. Il faudrait comparer plusieurs messages claire et chiffrer jusqu'a éliminer les clé au cas par cas le temps de calcule se voit extrement allongé et quasiment aléatoire sur la réception des messages claire et chiffrer. 
@@ -94,37 +93,59 @@ Notre fonction n'est pas linéaire a cause de la boite S qui brouille les entré
 '''
 debug = True
 
-def cps(sbox):
+def p(nmb): 
+    # retourne la pariter binaire 
+    result = 0
+    while nmb > 0:
+        if nmb%2 == 1:
+            result += 1
+        nmb = nmb>>1
+    return result
+
+def gep(): 
+    # tout les résultats (in, out) possible de la boiteS
+    l = []
+    for i in range(16):
+        l.append((i, sbox[i]))
+    return l
+
+def cps():
     # eviter les cases vides et les out of range
     score_table = {}
+    msgsbox = gep()
     for mask_i in range(1, 16):
         for mask_o in range(1, 16):
-            count = 0
-            for i in range(16):
-                input_masked = i & mask_i
-                output_masked = sbox[i] & mask_o
-                if bin(input_masked).count('1') % 2 == bin(output_masked).count('1') % 2 and bin(input_masked).count('1') % 2 == 1:
-                    count += 1
-            score_table[(mask_i, mask_o)] = count
-    if debug: 
-        print(score_table)
+            score_table[(mask_i, mask_o)] = 0
+            for msg in msgsbox:
+                input_masked = msg[0] & mask_i
+                output_masked = msg[1] & mask_o
+                if (p(input_masked)+p(output_masked)) % 2 ==  0:
+                    score_table[(mask_i, mask_o)] += 1
+    if debug: print(score_table)
     return score_table
 
 
 def fbm(score_table):
-    best_s = 0
-    best_m = None
-
+    best_s, best_m = 0, []
+    maskCouples = []
     for mask_i in range(1, 16):
         for mask_o in range(1, 16):
-            score = score_table[mask_i, mask_o]
-            if score > best_s:
-                best_s = score
-                best_m = [mask_i, mask_o]
+            if score_table[mask_i, mask_o] > best_s and mask_o+mask_i !=0:
+                best_s = score_table[mask_i, mask_o]
+                maskCouples = [[(mask_i, mask_o), (p(mask_i)+p(mask_o))%2]]
+                
+            elif score_table[mask_i, mask_o] == best_s and mask_o+mask_i !=0: 
+                maskCouples += [[(mask_i, mask_o), (p(mask_i)+p(mask_o)%2)]]
+                
+    best_s = 0
+    for couple in maskCouples:
+        if couple[1] > best_s:
+            best_s = couple[1]
+            best_m = couple[0]
+    return best_m , best_s
 
-    return best_m, best_s
-
-score_table = cps(sbox)
+print("Exo 3 :")
+score_table = cps()
 m, s = fbm(score_table)
 print(f"Score = : {s}\nmask = : {m}")
 
@@ -135,102 +156,92 @@ Exo 4:
 
 1.
 '''
-
+print("\nExo 4 :")
 liste_m_cc = gen_m_cc(key, 16)
-print(liste_m_cc)
+print(f"liste generer aléatoirement : \n{liste_m_cc}\n")
 
 '''
 3.
 '''
-def approximation_k0(liste_m, sbox):
-    k0_poss = [0 for _ in range(15)]
-    score_table = cps(sbox)
-    m = fbm(score_table)[0]
-    count = 0
-    best_k0 = 0
+def approximation_k0(liste_m, sbox, best_mask):
+    max = 0
+    m = best_mask # best mask
     liste_best_k0 = list()
     # test pariter pour chaque k0 
-    for k0 in range(0,15):
+    for k0 in range(15):
+        count = 0    
         for msg in liste_m:
-            mask_in = m[0] & sbox[k0 ^ msg[0]]
-            mask_out = m[1] & sbox[k0] ^ msg[1]
-            if bin(mask_in).count('1') % 2 == bin(mask_out).count('1') % 2 and bin(mask_in).count('1') % 2 == 1:
+            t = sbox[k0 ^ msg[0]]
+            if (p(t&m[0])+p(msg[1]&m[1]))%2 == 0:
                 count += 1
-        k0_poss[k0] = count
-        # if debug: print('\n',k0_poss)
-        count = 0
-    k0_poss[k0] = abs(count - (len(msg) / 2)) 
-    # trouve le k0 qui a la meilleur pariter 
-    for k in range(len(k0_poss)):
-        if k0_poss[k] >= best_k0:
-            best_k0 = k0_poss[k]
-    if debug: print('\n', best_k0)
-    # ajoute le/les k0 a notre liste finale 
-    for i in range(len(k0_poss)):
-        if k0_poss[i] == best_k0:
-            liste_best_k0.append(k0_poss.index(k0_poss[i], i))
-    if debug: print('\n',k0_poss)
-    if debug: print('\n',liste_best_k0)
-    
+        if abs(count-8) > max:
+            max = abs(count-8)
+        elif abs(count-8) == max:
+            liste_best_k0.append(k0) 
+    if debug: print('\nprint best k0_poss :',liste_best_k0)
     return liste_best_k0
 
-k0 = approximation_k0(liste_m_cc, sbox)
+best_mask = fbm(cps())[0]
+k0 = approximation_k0(liste_m_cc, sbox, best_mask)
 
-def approximation_k1(liste_m, sbox):
-    k1_poss = [0 for _ in range(15)]
-    score_table = cps(sbox)
-    m = fbm(score_table)[0]
-    count = 0
-    best_k1 = 0
-    liste_best_k1 = list()
-    
-    for k1 in range(15):
-        for msg in liste_m:
-            mask_in = m[0] & sbox[k1 ^ msg[0]]
-            mask_out = m[1]
-            if bin(mask_in).count('1') % 2 == bin(mask_out).count('1') % 2 and bin(mask_in).count('1') % 2 == 1:
-                count += 1
-        k1_poss[k1] = count
+print("Exo 5")
+def approximation_k1(liste_m, k0, sbox, xobs):
+    count = 0    
+    liste_k_poss = list()
+    for k in k0:
+        t0 = sbox[k^liste_m[0][0]]
+        t1 = xobs[liste_m[0][1]]
+        k1 = t0 ^ t1
+        liste_k_poss.append([k, k1])
+    for k in liste_k_poss:
         count = 0
-    
-    k1_poss[k1] = abs(count - (len(msg) / 2)) 
-    
-    for k in range(len(k1_poss)):
-        if k1_poss[k] >= best_k1:
-            best_k1 = k1_poss[k]
-    
-    if debug: print('\n', best_k1)
-    
-    for i in range(len(k1_poss)):
-        if k1_poss[i] == best_k1:
-            liste_best_k1.append(k1_poss.index(k1_poss[i], i))
-             
-    if debug: print('\n',k1_poss)
-    if debug: print('\n',liste_best_k1)
-    
-    return liste_best_k1
+        for msg, msgC in liste_m:
+            if msgC != enc(msg, k) or msg != dec(msgC, k):
+                break
+            count += 1
+        if count == len(liste_m):
+            if debug: print(f"La cles est égale a : {k}")
+            return k
+    return None
 
-k1 = approximation_k1(liste_m_cc, sbox)
+k1 = approximation_k1(liste_m_cc, k0, sbox, xobs)
 
-print(k0, k1)
+debug = False
 
-# def combinaison_cles(k0, k1):
-#     cles = [[0 for _ in range(len(k1))] for _ in range(len(k0))]  # Crée une liste de listes pour stocker les paires (k0, k1)
-
-#     for i in range(len(k0)):
-#         for j in range(len(k1)):
-#             cles[i][j] = [k0[i], k1[j]]
-#     if debug: print(cles)
-#     return cles
-
-# clé = combinaison_cles(k0, k1)
-
-
+sbox = [9, 11, 12, 4, 10, 1, 2, 6, 13, 7, 3, 8, 15, 14, 0, 5]
+xobs = [sbox.index(i) for i in range (16)]
+count = 0 
+liste_test = []
+keys = []
+best_mask = fbm(cps())[0]
 for i in range(1000):
-    liste_m_cc = gen_m_cc(key, 16)
-    k0 = approximation_k0(liste_m_cc, sbox)
-    k1 = approximation_k1(liste_m_cc, sbox)
-    for o in range(len(k0)):
-        for j in range(len(k1)):
-            
+    k0, k1 = random.randint(0, 15), random.randint(0, 15)
+    keys = [k0, k1]
+    liste_test = gen_m_cc(keys, 16)
+    if approximation_k1(liste_test, approximation_k0(liste_test, sbox, best_mask), sbox, xobs) != None: 
+        count += 1
+    i+=1
+print(f"Le pourcentage de bonne réponse est : {count/10}%")
 
+print("Exo 6 :")
+
+'''
+1. liste_m * nombre de clé possible (15*15 dans se cas = 225) juste pour un probable k0
+2. c'est beaucoup plus rapide 
+3. Oui car cela reste une instruction cpu a parcourir 
+4. [12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 2, 1] il y a environ 20% de différence c'est énorme 
+'''
+sbox = [12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 2, 1]
+xobs = [sbox.index(i) for i in range (16)]
+count = 0 
+liste_test = []
+keys = []
+best_mask = fbm(cps())[0]
+for i in range(1000):
+    k0, k1 = random.randint(0, 15), random.randint(0, 15)
+    keys = [k0, k1]
+    liste_test = gen_m_cc(keys, 16)
+    if approximation_k1(liste_test, approximation_k0(liste_test, sbox, best_mask), sbox, xobs) != None: 
+        count += 1
+    i+=1
+print(f"Le pourcentage de bonne réponse est : {count/10}%")
