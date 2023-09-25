@@ -7,4 +7,4 @@ s = 02306bf1b7
 
 4. Je vois qu'il y a un pique de consomation au début puis cela se stabilise pour la suite du programme avec des piques et des descentes éléctriques
 
-5. 
+5. j'ai pus trouver 0000 0110 0110 1101 0101 0001 1111 donc on a 6 739 223
