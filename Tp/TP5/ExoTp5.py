@@ -19,10 +19,9 @@ def gen_rsa(b):
     d = uNum.inverse(e,phi_n)
     m = random.randint(1,n)
 
-    public_key = (e, n)
-    private_key = (d, n)
     s = pow(m,d,n)
-    
+    # public_key = (e, n)
+    # private_key = (d, n)
     return s
 
 def gen_crtrsa(b):
@@ -79,15 +78,57 @@ s = fa7a82e289efdd33
 vrai résultat = 3f010be37eb5eca9
 """
 
-# Le module RSA n
-n = 47775493107113604137
+import Crypto.Util.number as number
 
-fake_value = 0x9c03f7cded2f7444
+def dec_to_hex(num):
+    return hex(num)[2:]
 
-diff = uNum.GCD(n, fake_value - 1)
+def sp(n,s,s_prime):
+    return dec_to_hex(number.GCD(n,s-s_prime))
 
-p = diff
-q = n // p
+key_p = (17, 47775493107113604137)
 
-print(f"p = {p}, q = {q}")
+soriginal = int("3f010be37eb5eca9",16)
+sfaux = int("014bc14b1e9873ce93",16)
 
+qr20 = sp(key_p[1],soriginal,sfaux)
+
+print(f"Valeur de q retrouvée : {qr20}")
+
+
+q = int(qr20,16)
+
+def find_p(n,q):
+    p = n // q
+    return p
+print("q :",q)
+p = find_p(key_p[1],q)
+print("p :",p,"\n")
+
+def find_key_prv(p,q,e):
+    n = p * q
+    phi_n = (p - 1) * (q - 1)
+    d = number.inverse(e, phi_n)
+    private_key = (d,n)
+    
+    return private_key
+
+key_prv = find_key_prv(p,q,key_p[0])  
+
+print(f"Valeur de privée key retrouvée : {key_prv}")
+
+
+def decrypt_message(key_prv,msg):
+    n = key_prv[1]
+    d = key_prv[0]
+    msg_dec = pow(msg, d, n)
+    return msg_dec
+
+msg_dec = decrypt_message(key_prv,soriginal)
+
+print(f"Valeur de message décryptée : {msg_dec}")
+
+'''
+Valeur de privée key retrouvée : (22482584984930046353, 47775493107113604137)
+Valeur de message décryptée : 24761341331221528199
+'''
