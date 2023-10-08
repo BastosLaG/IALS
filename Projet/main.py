@@ -70,7 +70,7 @@ def affichage_menu():
    add_mdp.grid(row=10, column=1)
 
 
-show_mdp = Button(text="Mes mots de passescd cd ", command=affichage_mdp)
+show_mdp = Button(text="Mes mots de passes", command=affichage_mdp)
 add_mdp = Button(text="Ajouter un mot de passe", command=affichage_add)
 Valider = Button(text="Valider", command=valide_action)
 
