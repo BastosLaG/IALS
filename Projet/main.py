@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import ttk
 from tkinter.filedialog import *
 
 win = Tk()
@@ -49,6 +50,9 @@ def affichage_mdp_perso():
    i = 1
    j = 1
    if id and mdp_id != "":
+      Label(win, text="Site").grid(row=0, column=1, padx = 100, pady= 5, sticky = W)
+      Label(win, text="Identifiant").grid(row=0, column=2, padx = 100, pady= 5, sticky = W)
+      Label(win, text="Mot de passe").grid(row=0, column=3, padx = 100, pady= 5, sticky = W)
       with open("data.txt") as f:
          contenants = f.readlines()
          for line in contenants:
@@ -57,9 +61,7 @@ def affichage_mdp_perso():
          # print(data)
       for line in data:
          temp = line[:2]
-         # print(temp)
          line = line[2:]
-         # print(line)
          if temp[0] == id and temp[1] == mdp_id:   
             Label(win, text=str(i)).grid(row=i, column=0)
             for col in line:
@@ -81,17 +83,33 @@ def affichage_add():
    siteWeb.grid(row=2, column=1)
    valider.grid(row=3, column=1, columnspan=1)
 
-
-
-
-
+def affichage_sup():
+   global val, id, mdp_id
+   val = True
+   remove_all_widgets()
+   Label(win, text="Veuillez choisir le numéro \nde la ligne à supprimer").grid(row=0, column=0, sticky = W)
+   data1 = []
+   data2 = []
+   with open("data.txt") as f:
+      contenants = f.readlines()
+      for line in contenants:
+         contenant = line.split()
+         data1.append(contenant)
+   for line in data1:
+      temp = line[:2]
+      line2 = line[2:]
+      if temp[0] == id and temp[1] == mdp_id:   
+         data2.append(line2)
+   
+   listSup['values'] = data2
+   listSup.grid(row= 0, column= 1, padx=15)
+   valider.grid(row=1, column=1, columnspan=1)
 
 
 
 # rempli de nouveau id data.txt
 def valide_action_data():
    global id, mdp_id, val
-   
    # crypter MDP.get
    
    with open("data.txt", "a") as f:
@@ -99,9 +117,6 @@ def valide_action_data():
    siteWeb.delete(0, END)
    identifiant.delete(0, END)
    motDePasse.delete(0, END)
-
-
-
 
 
 
@@ -134,7 +149,7 @@ def valide_action_connexion():
          mainMenu.delete(0, END)
          mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
          mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
-         mainMenu.add_command(label="Supprimer MDP")
+         mainMenu.add_command(label="Supprimer MDP",command=affichage_sup)
          return
    # idantifiant ou mdp incorrect
    Label(win, 
@@ -176,15 +191,7 @@ def valide_action_inscription():
    mainMenu.delete(0, END)
    mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
    mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
-   mainMenu.add_command(label="Supprimer MDP")
-
-
-
-
-
-
-
-
+   mainMenu.add_command(label="Supprimer MDP", command=affichage_sup)
 
 
 
@@ -210,11 +217,6 @@ def valide_enter2():
 
 
 
-
-
-
-
-
 # val -> validate button
 val = False
 val_connexion = False
@@ -235,6 +237,8 @@ motDePasse = Entry(bd=5, show="*")
 
 site_web = Label(win, text="Site web", bd=2)
 siteWeb = Entry(bd=5)
+
+listSup = ttk.Combobox(win, width=50)
 
 listbox = Listbox(win)
 
