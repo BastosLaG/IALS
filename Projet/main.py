@@ -211,17 +211,7 @@ def valide_action_inscription():
 
 
 # condition pour que la touche return fonctionne correctement
-def valide_enter1(event):
-   if val == True and siteWeb.get() != "" and identifiant.get() != "" and motDePasse.get() != "":
-      return valide_action_data()
-   if val_connexion == True and identifiant.get() != "" and motDePasse.get() != "":
-      return valide_action_connexion()
-   if val_inscription == True and identifiant.get() != "" and motDePasse.get() != "":
-      return valide_action_inscription()
-   if val_supprimer == True and listSup.get() != "":
-      pass
-# condition pour que le Button fonctionne correctement
-def valide_enter2():
+def valide_enter1(event=NONE):
    if val == True and siteWeb.get() != "" and identifiant.get() != "" and motDePasse.get() != "":
       return valide_action_data()
    if val_connexion == True and identifiant.get() != "" and motDePasse.get() != "":
@@ -249,7 +239,7 @@ id = ""
 mdp_id = ""
 
 win.bind("<Return>", valide_enter1)
-valider = ttk.Button(text="Valider", command=valide_enter2, padding=5)
+valider = ttk.Button(text="Valider", command=valide_enter1, padding=5)
 change_theme = ttk.Button(text="Theme", command=change_theme_enter, padding=5)
 
 identif = ttk.Label(win, text="Identifiant")
