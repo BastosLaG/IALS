@@ -4,7 +4,7 @@ from tkinter.filedialog import *
 win = Tk()
 win.title('Gestionnaire de mot de passe')
 win.geometry("800x150")
-# win.resizable(0,0)
+win.resizable(0,0)
 
 
 val = False
