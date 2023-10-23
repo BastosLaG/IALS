@@ -95,8 +95,8 @@ def affichage_add():
 
 
 def affichage_sup():
-   global val, id, mdp_id
-   val = True
+   global val, id, mdp_id, val_supprimer
+   val_supprimer = True
    remove_all_widgets()
    Label(win, text="Veuillez choisir le numéro \nde la ligne à supprimer").grid(row=0, column=0, sticky = W)
    change_theme.grid(row=1, column=0)
@@ -206,9 +206,28 @@ def valide_action_inscription():
    mainMenu.add_command(label="Supprimer MDP", command=affichage_sup)
 
 
-
-
-
+def supprimer(texte):
+   data = []
+   res = texte.split()
+   res2 = ""
+   with open("data.txt", "r") as f:
+      contenants = f.readlines()
+      for line in contenants:
+         contenant = line.split()
+         data.append(contenant)
+   with open("data.txt", 'w') as f:
+      for line in data:
+         temp = line[:2]
+         line2 = line[2:]
+         for elem in line:
+            res2 += elem + ' '
+         res2 += '\n'
+         if id != temp[0] or mdp_id != temp[1] or res[0] != line2[0] or res[1] != line2[1] or res[2] != line2[2]:
+            f.write(res2)
+         res2 = ""
+   listSup.delete(0, END)
+   return
+   
 
 # condition pour que la touche return fonctionne correctement
 def valide_enter1(event=NONE):
@@ -219,7 +238,8 @@ def valide_enter1(event=NONE):
    if val_inscription == True and identifiant.get() != "" and motDePasse.get() != "":
       return valide_action_inscription()
    if val_supprimer == True and listSup.get() != "":
-      pass
+      return supprimer(listSup.get())
+
 
 
 def change_theme_enter():
