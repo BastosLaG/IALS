@@ -17,8 +17,6 @@ big_frame.grid(padx=800, pady=400)
 win.tk.call("source", "azure.tcl")
 win.tk.call("set_theme", "light")
 
-
-
 # retire tout les widgets
 def remove_all_widgets():
    for widget in win.winfo_children():
@@ -52,16 +50,6 @@ def id_print(text):
    change_theme.grid(row=3, column=0)
    valider.grid(row=3, column=1, columnspan=1, sticky=EW)
 
-
-
-
-
-
-
-
-
-
-
 # affichage pour connexion a ces mdp a lui 
 def affichage_mdp_perso():
    global id, mdp_id 
@@ -71,9 +59,6 @@ def affichage_mdp_perso():
    if id and mdp_id != "":
       tree.grid(row=10, column=0, padx=10, pady=10, columnspan=3, sticky="nsew")
       scrollbar.grid(row=10, column=3, sticky='ns')
-      # ttk.Label(win, text="Site").grid(row=0, column=1, padx = 100, pady= 5, sticky = W)
-      # ttk.Label(win, text="Identifiant").grid(row=0, column=2, padx = 100, pady= 5, sticky = W)
-      # ttk.Label(win, text="Mot de passe").grid(row=0, column=3, padx = 100, pady= 5, sticky = W)
       with open("data.txt", 'r') as f:
          contenants = f.readlines()
          for line in contenants:
@@ -121,7 +106,6 @@ def affichage_supprimer():
       for line in contenants:
          contenant = line.split()
          data1.append(contenant)
-
    for line in data1:
       temp = line[:2]
       line2 = line[2:]
@@ -136,17 +120,9 @@ def affichage_supprimer():
             decrypted_line2.append(decrypted_elem)
          # print(decrypted_line2)
          data2.append(decrypted_line2)
-
-
    listSup['values'] = data2
    listSup.grid(row= 0, column= 1, padx=15)
    valider.grid(row=1, column=1, columnspan=1)
-
-
-
-
-
-
 
 
 # rempli de nouveau id data.txt
@@ -189,28 +165,12 @@ def valide_supprimer(texte):
             key = unlock.read()
          f = Fernet(key=key)
          
-         # print("id :",id)
-         # print("id :",temp[0])
-         # print("mdp :",mdp_id)
-         # print("mdp :", temp[1].encode('utf-8'))
-         # print(res[0], (f.decrypt(line2[0].encode('utf-8')).decode('utf-8')))
-         # print(res[1], (f.decrypt(line2[1].encode('utf-8')).decode('utf-8')))
-         # print(res[2], (f.decrypt(line2[2].encode('utf-8')).decode('utf-8')))
-                  
-         
          if id != temp[0] or mdp_id != temp[1].encode('utf-8') or res[0] != (f.decrypt(line2[0].encode('utf-8')).decode('utf-8')) or res[1] != (f.decrypt(line2[1].encode('utf-8')).decode('utf-8')) or res[2] != (f.decrypt(line2[2].encode('utf-8')).decode('utf-8')):
             file.write(res2)
          res2 = ""
    listSup.delete(0, END)
    return
    
-
-
-
-
-
-
-
 
 # se connecte
 def valide_action_connexion():
@@ -290,9 +250,6 @@ def valide_action_inscription():
    mainMenu.add_command(label="Supprimer MDP", command=affichage_supprimer)
 
 
-
-
-
 # condition pour que la touche return fonctionne correctement
 def valide_enter1(event=NONE):
    if val == True and siteWeb.get() != "" and identifiant.get() != "" and motDePasse.get() != "":
@@ -305,14 +262,11 @@ def valide_enter1(event=NONE):
       return valide_supprimer(listSup.get())
 
 
-
 def change_theme_enter():
    if win.tk.call("ttk::style", "theme", "use") == "azure-dark":
       win.tk.call("set_theme", "light")
    else:
       win.tk.call("set_theme", "dark")
-
-
 
 
 # val -> validate button
@@ -355,57 +309,6 @@ mainMenu.add_command(label="Connexion compte", command=connexion_id)
 win.config(menu=mainMenu)
 
 
-# key = Fernet.generate_key()
-# with open('unlock.key', 'wb') as unlock:
-#      unlock.write(key)
-
-# Récupération de la clé
-with open('unlock.key', 'rb') as unlock:
-     key = unlock.read()
-# print(key)
-f = Fernet(key=key)
-
-
-
-# # encyption des donnees 
-# with open('compte.txt', 'rb') as original_file:
-#    text = original_file.read()
-# enc = f.encrypt(text)
-# with open ('enc_compte.txt', 'wb') as encrypted_file:
-#      encrypted_file.write(enc)
-     
-     
-     
-# with open('data.txt', 'rb') as original_file:
-#    text = original_file.read()
-# enc = f.encrypt(text)
-# with open ('enc_data.txt', 'wb') as encrypted_file:
-#      encrypted_file.write(enc)
-
-
-
-# # decription des donnees
-# with open('enc_compte.txt', 'rb') as encrypted_file:
-#    text = encrypted_file.read()
-# dec = f.decrypt(text)
-# with open ('dec_compte.txt', 'wb') as decrypted_file:
-#      decrypted_file.write(dec)
-
-
-
-# with open('enc_data.txt', 'rb') as encrypted_file:
-#    text = encrypted_file.read()
-# dec = f.decrypt(text)
-# with open ('dec_data.txt', 'wb') as decrypted_file:
-#      decrypted_file.write(dec)
-
-
 connexion_id()
 
 win.mainloop()
-
-
-
-# os.remove('dec_compte.txt')
-# os.remove('dec_data.txt')
-
