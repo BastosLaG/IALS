@@ -74,18 +74,24 @@ def affichage_mdp_perso():
       # ttk.Label(win, text="Site").grid(row=0, column=1, padx = 100, pady= 5, sticky = W)
       # ttk.Label(win, text="Identifiant").grid(row=0, column=2, padx = 100, pady= 5, sticky = W)
       # ttk.Label(win, text="Mot de passe").grid(row=0, column=3, padx = 100, pady= 5, sticky = W)
-      with open("data.txt") as f:
+      with open("data.txt", 'r') as f:
          contenants = f.readlines()
          for line in contenants:
             contenant = line.split()
             data.append(contenant)
-         # print(data)
+      # print(data)
       for line in data:
+         # print(line)
          temp = line[:2]
          line = line[2:]
-         if temp[0] == id and temp[1] == mdp_id:   
+         with open('unlock.key', 'rb') as unlock:
+            key = unlock.read()
+         f = Fernet(key=key)
+         if temp[0] == id and f.decrypt(temp[1].encode('utf-8')).decode('utf-8') == mdp_id:   
             # ttk.Label(win, text=str(i)).grid(row=i, column=0)
-            tree.insert("", END, iid=i, values=(line[0], line[1], line[2]))
+            tree.insert("", END, iid=i, values=(f.decrypt(line[0].encode('utf-8')).decode('utf-8'),
+                                                f.decrypt(line[1].encode('utf-8')).decode('utf-8'), 
+                                                f.decrypt(line[2].encode('utf-8')).decode('utf-8')))
             i += 1
 
 
@@ -109,7 +115,7 @@ def affichage_add():
    change_theme.grid(row=3, column=0)
 
 
-def affichage_sup():
+def affichage_supprimer():
    global val, id, mdp_id, val_supprimer
    val_supprimer = True
    remove_all_widgets()
@@ -125,7 +131,10 @@ def affichage_sup():
    for line in data1:
       temp = line[:2]
       line2 = line[2:]
-      if temp[0] == id and temp[1] == mdp_id:   
+      with open('unlock.key', 'rb') as unlock:
+         key = unlock.read()
+      f = Fernet(key=key)
+      if temp[0] == id and  f.decrypt(temp[1].encode('utf-8')).decode('utf-8') == mdp_id:   
          data2.append(line2)
    
    listSup['values'] = data2
@@ -150,17 +159,49 @@ def valide_action_data():
    
    enc_id = id.encode('utf8')
    enc_mdp_id = f.encrypt(mdp_id.encode('utf8'))
+   enc_id_siteweb = f.encrypt(identifiant.get().encode('utf8'))
    enc_site_web = f.encrypt(siteWeb.get().upper().encode('utf8'))
    enc_mdp = f.encrypt(motDePasse.get().encode('utf8'))
    
    
    with open("data.txt", "ab") as f:
-      f.write(enc_id + b" " + enc_mdp_id + b" " +  enc_site_web + b" " + enc_id + b" " + enc_mdp + b" \n")
+      f.write(enc_id + b" " + enc_mdp_id + b" " +  enc_site_web + b" " + enc_id_siteweb + b" " + enc_mdp + b" \n")
    siteWeb.delete(0, END)
    identifiant.delete(0, END)
    motDePasse.delete(0, END)
 
+def valide_supprimer(texte):
+   data = []
+   res = texte.split()
+   res2 = ""
+   with open("data.txt", "r") as f:
+      contenants = f.readlines()
+      for line in contenants:
+         contenant = line.split()
+         data.append(contenant)
+   with open("data.txt", 'w') as f:
+      for line in data:
+         temp = line[:2]
+         line2 = line[2:]
+         for elem in line:
+            res2 += elem + ' '
+         res2 += '\n'
+         # print(id, temp[0])
+         # print(mdp_id, temp[1])
 
+         # print(res[0], line2[0])
+         # print(res[1], line2[1])
+         # print(res[2], line2[2])
+         with open('unlock.key', 'rb') as unlock:
+            key = unlock.read()
+         f = Fernet(key=key)
+         if id != temp[0] or mdp_id != (f.decrypt(temp[1].encode('utf-8')).decode('utf-8')) or res[0] != line2[0] or res[1] != line2[1] or res[2] != line2[2]:
+            print("hola hiro !!!")
+            f.write(res2)
+         res2 = ""
+   listSup.delete(0, END)
+   return
+   
 
 
 
@@ -195,9 +236,7 @@ def valide_action_connexion():
          val_connexion = False
          id = identifiant.get().upper()
          mdp_id = motDePasse.get()
-         
-         # Crypter nos données
-         
+
          remove_all_widgets()
          siteWeb.delete(0, END)
          identifiant.delete(0, END)
@@ -205,7 +244,7 @@ def valide_action_connexion():
          mainMenu.delete(0, END)
          mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
          mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
-         mainMenu.add_command(label="Supprimer MDP",command=affichage_sup)
+         mainMenu.add_command(label="Supprimer MDP",command=affichage_supprimer)
          return
    # idantifiant ou mdp incorrect
    Label(win, 
@@ -213,13 +252,6 @@ def valide_action_connexion():
          fg="#ff0000").grid(row=0, column=2, rowspan=2, sticky=EW)
    identifiant.delete(0, END)
    motDePasse.delete(0, END)
-
-
-
-
-
-
-
 
 # s'inscrit
 def valide_action_inscription():
@@ -249,10 +281,7 @@ def valide_action_inscription():
       key = unlock.read()
    f = Fernet(key=key)
    # cryptage du mdp
-   mdp_id = mdp_id.encode('utf-8')
-   id = id.encode('utf-8')
-   
-   enc_mdp_id = f.encrypt(mdp_id)
+   enc_mdp_id = f.encrypt(mdp_id.encode('utf-8'))
    
    with open("compte.txt", "ab") as f:
       f.write(id + b" " + enc_mdp_id + b" \n")
@@ -266,39 +295,11 @@ def valide_action_inscription():
    mainMenu.delete(0, END)
    mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
    mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
-   mainMenu.add_command(label="Supprimer MDP", command=affichage_sup)
+   mainMenu.add_command(label="Supprimer MDP", command=affichage_supprimer)
 
 
 
 
-
-
-
-
-
-
-def supprimer(texte):
-   data = []
-   res = texte.split()
-   res2 = ""
-   with open("data.txt", "r") as f:
-      contenants = f.readlines()
-      for line in contenants:
-         contenant = line.split()
-         data.append(contenant)
-   with open("data.txt", 'w') as f:
-      for line in data:
-         temp = line[:2]
-         line2 = line[2:]
-         for elem in line:
-            res2 += elem + ' '
-         res2 += '\n'
-         if id != temp[0] or mdp_id != temp[1] or res[0] != line2[0] or res[1] != line2[1] or res[2] != line2[2]:
-            f.write(res2)
-         res2 = ""
-   listSup.delete(0, END)
-   return
-   
 
 # condition pour que la touche return fonctionne correctement
 def valide_enter1(event=NONE):
@@ -309,7 +310,7 @@ def valide_enter1(event=NONE):
    if val_inscription == True and identifiant.get() != "" and motDePasse.get() != "":
       return valide_action_inscription()
    if val_supprimer == True and listSup.get() != "":
-      return supprimer(listSup.get())
+      return valide_supprimer(listSup.get())
 
 
 
