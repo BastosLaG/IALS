@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter.filedialog import *
+from cryptography.fernet import Fernet
+import os
 
 win = Tk()
 win.title('Gestionnaire de mot de passe')
@@ -53,6 +55,13 @@ def id_print(text):
 
 
 
+
+
+
+
+
+
+
 # affichage pour connexion a ces mdp a lui 
 def affichage_mdp_perso():
    global id, mdp_id 
@@ -78,6 +87,12 @@ def affichage_mdp_perso():
             # ttk.Label(win, text=str(i)).grid(row=i, column=0)
             tree.insert("", END, iid=i, values=(line[0], line[1], line[2]))
             i += 1
+
+
+
+
+
+
 
 
 def affichage_add():
@@ -119,16 +134,38 @@ def affichage_sup():
 
 
 
+
+
+
+
+
 # rempli de nouveau id data.txt
 def valide_action_data():
    global id, mdp_id, val
    # crypter MDP.get
+   # Récupération de la clé
+   with open('unlock.key', 'rb') as unlock:
+      key = unlock.read()
+   f = Fernet(key=key)
    
-   with open("data.txt", "a") as f:
-      f.write(id + " " + mdp_id + " " +  siteWeb.get().upper() + " " + identifiant.get().upper() + " " + motDePasse.get() + " \n")
+   enc_id = id.encode('utf8')
+   enc_mdp_id = f.encrypt(mdp_id.encode('utf8'))
+   enc_site_web = f.encrypt(siteWeb.get().upper().encode('utf8'))
+   enc_mdp = f.encrypt(motDePasse.get().encode('utf8'))
+   
+   
+   with open("data.txt", "ab") as f:
+      f.write(enc_id + b" " + enc_mdp_id + b" " +  enc_site_web + b" " + enc_id + b" " + enc_mdp + b" \n")
    siteWeb.delete(0, END)
    identifiant.delete(0, END)
    motDePasse.delete(0, END)
+
+
+
+
+
+
+
 
 
 
@@ -137,17 +174,24 @@ def valide_action_connexion():
    global id, mdp_id, val_connexion
    data = []
    # check si pas déjà créer
-   with open("compte.txt") as f:
+   with open("compte.txt", 'rb') as f:
       contenants = f.readlines()
       for line in contenants:
          contenant = line.split()
          data.append(contenant)
    for elem in data:
       
+      # Récupération de la clé
+      with open('unlock.key', 'rb') as unlock:
+         key = unlock.read()
+      f = Fernet(key=key)
+      
       # decrypter nos elements 
+      enc_mdp_id = f.decrypt(elem[1])
+      enc_mdp_id = enc_mdp_id.decode('utf8')
       
       # si condition vrai alors log la personne
-      if elem[0] == identifiant.get().upper() and elem[1] == motDePasse.get():
+      if elem[0].decode('utf-8') == identifiant.get().upper() and enc_mdp_id == motDePasse.get():
          val_connexion = False
          id = identifiant.get().upper()
          mdp_id = motDePasse.get()
@@ -170,6 +214,13 @@ def valide_action_connexion():
    identifiant.delete(0, END)
    motDePasse.delete(0, END)
 
+
+
+
+
+
+
+
 # s'inscrit
 def valide_action_inscription():
    global id, mdp_id, val_inscription
@@ -187,15 +238,27 @@ def valide_action_inscription():
                text="Identifiant ou mot de passe déjà utiliser par un autre utilisateur",
                fg="#ff0000").grid(row=0, column=2, rowspan=2, sticky=EW)
          return
-   # idantifiant ou mdp incorrect
+   # idantifiant ou mdp correct
    val_inscription = False
    id = identifiant.get().upper()
    mdp_id = motDePasse.get()
-   
    # ajouter notre fonction de cryptage de mdp 
+
+   # Récupération de la clé
+   with open('unlock.key', 'rb') as unlock:
+      key = unlock.read()
+   f = Fernet(key=key)
+   # cryptage du mdp
+   mdp_id = mdp_id.encode('utf-8')
+   id = id.encode('utf-8')
    
-   with open("compte.txt", "a") as f:
-      f.write(identifiant.get().upper() + " " + motDePasse.get() + " \n")
+   enc_mdp_id = f.encrypt(mdp_id)
+   
+   with open("compte.txt", "ab") as f:
+      f.write(id + b" " + enc_mdp_id + b" \n")
+   
+   
+   
    remove_all_widgets()
    siteWeb.delete(0, END)
    identifiant.delete(0, END)
@@ -204,6 +267,14 @@ def valide_action_inscription():
    mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
    mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
    mainMenu.add_command(label="Supprimer MDP", command=affichage_sup)
+
+
+
+
+
+
+
+
 
 
 def supprimer(texte):
@@ -248,6 +319,9 @@ def change_theme_enter():
    else:
       win.tk.call("set_theme", "dark")
 
+
+
+
 # val -> validate button
 val = False
 val_connexion = False
@@ -287,6 +361,58 @@ mainMenu.add_command(label="Créer compte", command=create_id)
 mainMenu.add_command(label="Connexion compte", command=connexion_id)
 win.config(menu=mainMenu)
 
+
+# key = Fernet.generate_key()
+# with open('unlock.key', 'wb') as unlock:
+#      unlock.write(key)
+
+# Récupération de la clé
+with open('unlock.key', 'rb') as unlock:
+     key = unlock.read()
+# print(key)
+f = Fernet(key=key)
+
+
+
+# # encyption des donnees 
+# with open('compte.txt', 'rb') as original_file:
+#    text = original_file.read()
+# enc = f.encrypt(text)
+# with open ('enc_compte.txt', 'wb') as encrypted_file:
+#      encrypted_file.write(enc)
+     
+     
+     
+# with open('data.txt', 'rb') as original_file:
+#    text = original_file.read()
+# enc = f.encrypt(text)
+# with open ('enc_data.txt', 'wb') as encrypted_file:
+#      encrypted_file.write(enc)
+
+
+
+# # decription des donnees
+# with open('enc_compte.txt', 'rb') as encrypted_file:
+#    text = encrypted_file.read()
+# dec = f.decrypt(text)
+# with open ('dec_compte.txt', 'wb') as decrypted_file:
+#      decrypted_file.write(dec)
+
+
+
+# with open('enc_data.txt', 'rb') as encrypted_file:
+#    text = encrypted_file.read()
+# dec = f.decrypt(text)
+# with open ('dec_data.txt', 'wb') as decrypted_file:
+#      decrypted_file.write(dec)
+
+
 connexion_id()
 
 win.mainloop()
+
+
+
+# os.remove('dec_compte.txt')
+# os.remove('dec_data.txt')
+
