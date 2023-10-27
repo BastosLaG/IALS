@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.filedialog import *
 from cryptography.fernet import Fernet
-import os
+import hashlib
 
 win = Tk()
 win.title('Gestionnaire de mot de passe')
@@ -87,19 +87,12 @@ def affichage_mdp_perso():
          with open('unlock.key', 'rb') as unlock:
             key = unlock.read()
          f = Fernet(key=key)
-         if temp[0] == id and f.decrypt(temp[1].encode('utf-8')).decode('utf-8') == mdp_id:   
+         if temp[0] == id and temp[1] == mdp_id.decode('utf-8'):   
             # ttk.Label(win, text=str(i)).grid(row=i, column=0)
             tree.insert("", END, iid=i, values=(f.decrypt(line[0].encode('utf-8')).decode('utf-8'),
                                                 f.decrypt(line[1].encode('utf-8')).decode('utf-8'), 
                                                 f.decrypt(line[2].encode('utf-8')).decode('utf-8')))
             i += 1
-
-
-
-
-
-
-
 
 def affichage_add():
    global val
@@ -123,20 +116,28 @@ def affichage_supprimer():
    change_theme.grid(row=1, column=0)
    data1 = []
    data2 = []
-   with open("data.txt") as f:
-      contenants = f.readlines()
+   with open("data.txt") as file:
+      contenants = file.readlines()
       for line in contenants:
          contenant = line.split()
          data1.append(contenant)
+
    for line in data1:
       temp = line[:2]
       line2 = line[2:]
       with open('unlock.key', 'rb') as unlock:
          key = unlock.read()
       f = Fernet(key=key)
-      if temp[0] == id and  f.decrypt(temp[1].encode('utf-8')).decode('utf-8') == mdp_id:   
-         data2.append(line2)
-   
+      if temp[0] == id and temp[1] == mdp_id.decode('utf-8'):
+         # print(line2)
+         decrypted_line2 = []
+         for elem in line2:
+            decrypted_elem = f.decrypt(elem.encode('utf-8')).decode('utf-8')
+            decrypted_line2.append(decrypted_elem)
+         # print(decrypted_line2)
+         data2.append(decrypted_line2)
+
+
    listSup['values'] = data2
    listSup.grid(row= 0, column= 1, padx=15)
    valider.grid(row=1, column=1, columnspan=1)
@@ -149,23 +150,21 @@ def affichage_supprimer():
 
 
 # rempli de nouveau id data.txt
-def valide_action_data():
+def valide_action_add():
    global id, mdp_id, val
    # crypter MDP.get
    # Récupération de la clé
    with open('unlock.key', 'rb') as unlock:
       key = unlock.read()
+   # print(key)
    f = Fernet(key=key)
-   
-   enc_id = id.encode('utf8')
-   enc_mdp_id = f.encrypt(mdp_id.encode('utf8'))
+     
    enc_id_siteweb = f.encrypt(identifiant.get().encode('utf8'))
    enc_site_web = f.encrypt(siteWeb.get().upper().encode('utf8'))
    enc_mdp = f.encrypt(motDePasse.get().encode('utf8'))
    
-   
    with open("data.txt", "ab") as f:
-      f.write(enc_id + b" " + enc_mdp_id + b" " +  enc_site_web + b" " + enc_id_siteweb + b" " + enc_mdp + b" \n")
+      f.write(id.encode('utf8') + b" " + mdp_id + b" " +  enc_site_web + b" " + enc_id_siteweb + b" " + enc_mdp + b" \n")
    siteWeb.delete(0, END)
    identifiant.delete(0, END)
    motDePasse.delete(0, END)
@@ -179,25 +178,28 @@ def valide_supprimer(texte):
       for line in contenants:
          contenant = line.split()
          data.append(contenant)
-   with open("data.txt", 'w') as f:
+   with open("data.txt", 'w') as file:
       for line in data:
          temp = line[:2]
          line2 = line[2:]
          for elem in line:
             res2 += elem + ' '
          res2 += '\n'
-         # print(id, temp[0])
-         # print(mdp_id, temp[1])
-
-         # print(res[0], line2[0])
-         # print(res[1], line2[1])
-         # print(res[2], line2[2])
          with open('unlock.key', 'rb') as unlock:
             key = unlock.read()
          f = Fernet(key=key)
-         if id != temp[0] or mdp_id != (f.decrypt(temp[1].encode('utf-8')).decode('utf-8')) or res[0] != line2[0] or res[1] != line2[1] or res[2] != line2[2]:
-            print("hola hiro !!!")
-            f.write(res2)
+         
+         # print("id :",id)
+         # print("id :",temp[0])
+         # print("mdp :",mdp_id)
+         # print("mdp :", temp[1].encode('utf-8'))
+         # print(res[0], (f.decrypt(line2[0].encode('utf-8')).decode('utf-8')))
+         # print(res[1], (f.decrypt(line2[1].encode('utf-8')).decode('utf-8')))
+         # print(res[2], (f.decrypt(line2[2].encode('utf-8')).decode('utf-8')))
+                  
+         
+         if id != temp[0] or mdp_id != temp[1].encode('utf-8') or res[0] != (f.decrypt(line2[0].encode('utf-8')).decode('utf-8')) or res[1] != (f.decrypt(line2[1].encode('utf-8')).decode('utf-8')) or res[2] != (f.decrypt(line2[2].encode('utf-8')).decode('utf-8')):
+            file.write(res2)
          res2 = ""
    listSup.delete(0, END)
    return
@@ -227,15 +229,11 @@ def valide_action_connexion():
          key = unlock.read()
       f = Fernet(key=key)
       
-      # decrypter nos elements 
-      enc_mdp_id = f.decrypt(elem[1])
-      enc_mdp_id = enc_mdp_id.decode('utf8')
-      
       # si condition vrai alors log la personne
-      if elem[0].decode('utf-8') == identifiant.get().upper() and enc_mdp_id == motDePasse.get():
+      if elem[0] == identifiant.get().upper() or f.decrypt(elem[1]) == (hashlib.sha256(motDePasse.get().encode('utf-8')).digest()):
          val_connexion = False
          id = identifiant.get().upper()
-         mdp_id = motDePasse.get()
+         mdp_id = elem[1]
 
          remove_all_widgets()
          siteWeb.delete(0, END)
@@ -263,9 +261,13 @@ def valide_action_inscription():
       for line in contenants:
          contenant = line.split()
          data.append(contenant)
+   # Récupération de la clé
+   with open('unlock.key', 'rb') as unlock:
+      key = unlock.read()
+   f = Fernet(key=key)
    for elem in data:
-      # si condition vrai alors log la personne
-      if elem[0] == identifiant.get().upper() or elem[1] == motDePasse.get():
+      # si condition fausse alors log la personne
+      if elem[0] == identifiant.get().upper() or elem[1] == f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest())):
          Label(win, 
                text="Identifiant ou mot de passe déjà utiliser par un autre utilisateur",
                fg="#ff0000").grid(row=0, column=2, rowspan=2, sticky=EW)
@@ -273,21 +275,11 @@ def valide_action_inscription():
    # idantifiant ou mdp correct
    val_inscription = False
    id = identifiant.get().upper()
-   mdp_id = motDePasse.get()
-   # ajouter notre fonction de cryptage de mdp 
-
-   # Récupération de la clé
-   with open('unlock.key', 'rb') as unlock:
-      key = unlock.read()
-   f = Fernet(key=key)
-   # cryptage du mdp
-   enc_mdp_id = f.encrypt(mdp_id.encode('utf-8'))
+   mdp_id = f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest()))
    
    with open("compte.txt", "ab") as f:
-      f.write(id + b" " + enc_mdp_id + b" \n")
-   
-   
-   
+      f.write(id.encode('utf-8') + b" " + mdp_id + b" \n")
+
    remove_all_widgets()
    siteWeb.delete(0, END)
    identifiant.delete(0, END)
@@ -304,7 +296,7 @@ def valide_action_inscription():
 # condition pour que la touche return fonctionne correctement
 def valide_enter1(event=NONE):
    if val == True and siteWeb.get() != "" and identifiant.get() != "" and motDePasse.get() != "":
-      return valide_action_data()
+      return valide_action_add()
    if val_connexion == True and identifiant.get() != "" and motDePasse.get() != "":
       return valide_action_connexion()
    if val_inscription == True and identifiant.get() != "" and motDePasse.get() != "":
