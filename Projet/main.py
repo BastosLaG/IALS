@@ -18,6 +18,8 @@ big_frame.grid(padx=800, pady=400)
 win.tk.call("source", "azure.tcl")
 win.tk.call("set_theme", "light")
 
+hash_mdp = hashlib.sha256()
+
 # retire tout les widgets
 def remove_all_widgets():
    for widget in win.winfo_children():
@@ -222,52 +224,34 @@ def valide_action_inscription():
    f = Fernet(key=key)
    
    # check si pas déjà créer
-   try:
-      with open("compte.txt", 'rw') as file:
-         contenants = file.readlines()
-         for line in contenants:
-            contenant = line.split()
-            data.append(contenant)
-      for elem in data:
-         # si condition fausse alors log la personne
-         if elem[0] == identifiant.get().upper() or elem[1] == f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest())):
-            Label(win, 
-                  text="Identifiant ou mot de passe déjà utiliser par un autre utilisateur",
-                  fg="#ff0000").grid(row=0, column=2, rowspan=2, sticky=EW)
-            return
-      # idantifiant ou mdp correct
-      val_inscription = False
-      id = identifiant.get().upper()
-      mdp_id = f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest()))
-      
-      with open("compte.txt", "ab") as f:
-         f.write(id.encode('utf-8') + b" " + mdp_id + b" \n")
+   with open("compte.txt", 'r') as file:
+      contenants = file.readlines()
+      for line in contenants:
+         contenant = line.split()
+         data.append(contenant)
+   for elem in data:
+      # si condition fausse alors log la personne
+      if elem[0] == identifiant.get().upper() or elem[1] == f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest())):
+         Label(win, 
+               text="Identifiant ou mot de passe déjà utiliser par un autre utilisateur",
+               fg="#ff0000").grid(row=0, column=2, rowspan=2, sticky=EW)
+         return
+   # idantifiant ou mdp correct
+   val_inscription = False
+   id = identifiant.get().upper()
+   mdp_id = f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest()))
+   
+   with open("compte.txt", "ab") as f:
+      f.write(id.encode('utf-8') + b" " + mdp_id + b" \n")
 
-      remove_all_widgets()
-      siteWeb.delete(0, END)
-      identifiant.delete(0, END)
-      motDePasse.delete(0, END)
-      mainMenu.delete(0, END)
-      mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
-      mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
-      mainMenu.add_command(label="Supprimer MDP", command=affichage_supprimer)
-   except: 
-      # idantifiant ou mdp correct
-      val_inscription = False
-      id = identifiant.get().upper()
-      mdp_id = f.encrypt((hashlib.sha256(motDePasse.get().encode('utf-8')).digest()))
-      
-      with open("compte.txt", "ab") as f:
-         f.write(id.encode('utf-8') + b" " + mdp_id + b" \n")
-
-      remove_all_widgets()
-      siteWeb.delete(0, END)
-      identifiant.delete(0, END)
-      motDePasse.delete(0, END)
-      mainMenu.delete(0, END)
-      mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
-      mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
-      mainMenu.add_command(label="Supprimer MDP", command=affichage_supprimer)
+   remove_all_widgets()
+   siteWeb.delete(0, END)
+   identifiant.delete(0, END)
+   motDePasse.delete(0, END)
+   mainMenu.delete(0, END)
+   mainMenu.add_command(label="Mes MDP", command=affichage_mdp_perso)  
+   mainMenu.add_command(label="Ajouter MDP", command=affichage_add)
+   mainMenu.add_command(label="Supprimer MDP", command=affichage_supprimer)
 
 
 # condition pour que la touche return fonctionne correctement
@@ -294,27 +278,27 @@ with open('unlock.key', 'rb') as unlock:
      key = unlock.read()
 f = Fernet(key=key)
 
-if os.path.exists('data.enc'):
-   print("Decodage data.enc")
-   with open('data.enc', 'rb') as encrypted_file:
-      encrypted = encrypted_file.read()
-   decrypted = f.decrypt(encrypted)
-   print("Ecriture data.txt")
-   with open('data.txt', 'wb') as decrypted_file:
-      decrypted_file.write(decrypted)
-   print("Remove data_enc\n")
-   os.remove('data.enc')
+# if os.path.exists('data.enc'):
+print("Decodage data.enc")
+with open('data.enc', 'rb') as encrypted_file:
+   encrypted = encrypted_file.read()
+decrypted = f.decrypt(encrypted)
+print("Ecriture data.txt")
+with open('data.txt', 'wb') as decrypted_file:
+   decrypted_file.write(decrypted)
+print("Remove data_enc\n")
+os.remove('data.enc')
    
-if os.path.exists('compte.enc'):
-   print("Decodage compte.enc")
-   with open('compte.enc', 'rb') as encrypted_file:
-      encrypted = encrypted_file.read()
-   decrypted = f.decrypt(encrypted)
-   print("Ecriture compte.txt")
-   with open('compte.txt', 'wb') as decrypted_file:
-      decrypted_file.write(decrypted)
-   print("Remove compte_enc\n")
-   os.remove('compte.enc')
+# if os.path.exists('compte.enc'):
+print("Decodage compte.enc")
+with open('compte.enc', 'rb') as encrypted_file:
+   encrypted = encrypted_file.read()
+decrypted = f.decrypt(encrypted)
+print("Ecriture compte.txt")
+with open('compte.txt', 'wb') as decrypted_file:
+   decrypted_file.write(decrypted)
+print("Remove compte_enc\n")
+os.remove('compte.enc')
 
 
 # val -> validate button
